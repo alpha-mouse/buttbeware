@@ -29,7 +29,7 @@ volatile long lastStateChangeTime;
 volatile int pulsesReceived = 0;
 
 
-void setup(){
+void setup() {
 
   tmrpcm.speakerPin = MusicPCMPin;
 
@@ -52,10 +52,10 @@ void setup(){
 }
 
 
-void loop(){  
+void loop() {
   long duration;
 
-  switch(currentState) {
+  switch (currentState) {
     case S_WaitingTrigger:
       sleep();
       break;
@@ -64,7 +64,7 @@ void loop(){
       if (duration < TriggerDuration) {
         break;
       } else {
-        if (pulsesReceived < (long)TriggerFrequency * duration / 1000 / 2){
+        if (pulsesReceived < (long)TriggerFrequency * duration / 1000 / 2) {
           // false positive
           goToState(S_WaitingTrigger);
           sleep();
@@ -95,7 +95,7 @@ void loop(){
 }
 
 void sleep() {
-  LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF); 
+  LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
 }
 
 void goToState(state_t state) {
@@ -103,7 +103,7 @@ void goToState(state_t state) {
   lastStateChangeTime = millis();
 }
 
-void rcSignal(){
+void rcSignal() {
   if (currentState == S_WaitingTrigger) {
     goToState(S_TriggerCandidate);
     pulsesReceived = 1;
