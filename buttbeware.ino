@@ -31,14 +31,15 @@ volatile int pulsesReceived = 0;
 
 void setup() {
 
+  Serial.begin(115200);
+
   tmrpcm.speakerPin = MusicPCMPin;
 
-  Serial.begin(115200);
   if (!SD.begin(SDChipSelectPin)) {
-    Serial.println("SD fail");
+    message("fail SD");
     return;
   } else {
-    Serial.println("SD ok");
+    message("ok SD");
   }
 
   pinMode(RelayPin, OUTPUT);
@@ -46,11 +47,10 @@ void setup() {
   pinMode(RCLedPin, INPUT);
   attachInterrupt(digitalPinToInterrupt(RCLedPin), rcSignal, RISING);
 
-  Serial.println("Startup ok");
+  message("Startup ok");
   goToState(S_WaitingTrigger);
   sleep();
 }
-
 
 void loop() {
   long duration;
@@ -66,9 +66,11 @@ void loop() {
       } else {
         if (pulsesReceived < (long)TriggerFrequency * duration / 1000 / 2) {
           // false positive
+          message(pulsesReceived);
           goToState(S_WaitingTrigger);
           sleep();
         } else {
+          message(pulsesReceived);
           goToState(S_Triggered);
         }
         break;
@@ -99,6 +101,7 @@ void sleep() {
 }
 
 void goToState(state_t state) {
+  message("to state ", state);
   currentState = state;
   lastStateChangeTime = millis();
 }
@@ -110,5 +113,21 @@ void rcSignal() {
   } else if (currentState == S_TriggerCandidate) {
     pulsesReceived++;
   }
+}
+
+void message(char str[]) {
+  Serial.println(str);
+  Serial.flush();
+}
+
+void message(char str[], int i) {
+  Serial.print(str);
+  Serial.println(i);
+  Serial.flush();
+}
+
+void message(long i) {
+  Serial.println(i);
+  Serial.flush();
 }
 
