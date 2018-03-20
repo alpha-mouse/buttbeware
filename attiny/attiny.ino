@@ -29,6 +29,7 @@ volatile boolean batteryLowWarningLit = false;
 ISR(INT0_vect)
 {
   if (currentState == S_WaitingTrigger) {
+    MCUCR |= _BV(ISC01); // switch to falling edge interruption
     goToState(S_TriggerCandidate);
     pulsesReceived = 1;
   } else if (currentState == S_TriggerCandidate) {
@@ -64,7 +65,7 @@ void setup() {
 
   // RC interrupt setup
   GIMSK |= _BV(INT0); // enable interrupt
-  MCUCR |= _BV(ISC01); // falling edge
+  MCUCR &= ~(_BV(ISC01) | _BV(ISC00)); // low level, because otherwise attiny wont wake-up
 
   // check batteries on startup
   checkBatteries();
@@ -139,6 +140,7 @@ void loop() {
 }
 
 void sleep() {
+  MCUCR &= ~(_BV(ISC01) | _BV(ISC00)); // low level, because otherwise attiny wont wake-up
   set_sleep_mode(SLEEP_MODE_PWR_DOWN);
   cli();
   sleep_enable();
