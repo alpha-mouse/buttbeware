@@ -4,7 +4,6 @@
 #define SDChipSelectPin 4
 #define MusicPCMPin 9
 #define LightPin 6
-#define BatteryVoltageDividerPin 5
 #define LightPhaseDuration 800
 
 const char music[] = "mrm.wav";
@@ -26,8 +25,6 @@ void setup() {
   }
 
   pinMode(LightPin, OUTPUT);
-  pinMode(BatteryVoltageDividerPin, OUTPUT);
-  digitalWrite(BatteryVoltageDividerPin, HIGH);
 
   tmrpcm.play(music);
   startTime = millis();

@@ -5,8 +5,8 @@
 #define TriggerDuration 300
 #define TriggerFrequency 480
 #define AlarmingOwnBatteryLevel 3600
-#define AlarmingOtherBatteryLevel 8000
-#define OtherBatteryVoltageDivision 6
+#define AlarmingOtherBatteryLevel 8700
+#define OtherBatteryVoltageDivision 3.3
 
 enum state_t {
   S_Initializing = 0,
@@ -16,7 +16,7 @@ enum state_t {
   S_Playing = 4,
 };
 
-const long TurnOnDuration = 36000;
+const long TurnOnDuration = 39000; // really less, but attiny counts fast
 volatile byte currentState = S_Initializing;
 volatile long lastStateChangeTime;
 volatile int pulsesReceived = 0;
@@ -68,7 +68,10 @@ void setup() {
   MCUCR &= ~(_BV(ISC01) | _BV(ISC00)); // low level, because otherwise attiny wont wake-up
 
   // check batteries on startup
+  PORTB |= _BV(PB4); // turn on downstream just to check voltage
+  delay(10);
   checkBatteries();
+  PORTB &= ~_BV(PB4); // turn off again
   if (ownBatteryLow || otherBatteryLow) {
     // flash for 2sec if some battery is low
     if (ownBatteryLow) {
@@ -195,7 +198,7 @@ int readOwnVcc() {
 }
 
 int readOtherVoltage(int reference) {
-  long voltage = analogRead(3);
-  return reference * voltage * OtherBatteryVoltageDivision / 1023;
+  double voltage = analogRead(3);
+  return (int)(reference * voltage * OtherBatteryVoltageDivision / 1023);
 }
 
