@@ -16,13 +16,13 @@ enum state_t {
   S_Playing = 4,
 };
 
-const long TurnOnDuration = 35000;
+const long TurnOnDuration = 36000;
 volatile byte currentState = S_Initializing;
 volatile long lastStateChangeTime;
 volatile int pulsesReceived = 0;
 
-boolean ownBatteryLow = false;
-boolean otherBatteryLow = false;
+volatile boolean ownBatteryLow = false;
+volatile boolean otherBatteryLow = false;
 volatile boolean batteryLowWarningLit = false;
 
 // RC interrupt
@@ -36,14 +36,14 @@ ISR(INT0_vect)
   }
 }
 
-int watchdogIteration = 0; // so that warning lights are lit once a minute approx.
+int watchdogIteration = 0;
 // watchdog low battry level signaling
 ISR(WDT_vect)
 {
-  if (++watchdogIteration == 8) {
+  if (++watchdogIteration == 8) { // so that low battery warning lights are lit once a minute approx.
     watchdogIteration = 0;
     if (ownBatteryLow) {
-      PORTB |= _BV(PB4);
+      PORTB |= _BV(PB0);
     }
     if (otherBatteryLow) {
       PORTB |= _BV(PB1);
@@ -54,9 +54,10 @@ ISR(WDT_vect)
 
 void setup() {
 
-  DDRB |= _BV(DDB0); // pin 5 output swith downstream
   DDRB &= ~_BV(DDB3); // pin 2 input downstream voltage
-  DDRB |= _BV(DDB4); // pin 3 output own voltage warning
+  DDRB |= _BV(DDB4); // pin 3 output switch downstream
+  
+  DDRB |= _BV(DDB0); // pin 5 output own voltage warning
   DDRB |= _BV(DDB1); // pin 6 output downstream voltage warning
 
   DDRB &= ~_BV(DDB2); // pin 7 input RC interrupt
@@ -67,22 +68,22 @@ void setup() {
 
   // check batteries on startup
   checkBatteries();
-  if (!(ownBatteryLow || otherBatteryLow)) {
-    // flash short if all fine
-    PORTB |= _BV(PB4) || _BV(PB1);
-    delay(5);
-    PORTB &= ~(_BV(PB4) || _BV(PB1));
-  } else {
+  if (ownBatteryLow || otherBatteryLow) {
     // flash for 2sec if some battery is low
     if (ownBatteryLow) {
-      PORTB |= _BV(PB4);
+      PORTB |= _BV(PB0);
     }
     if (otherBatteryLow) {
       PORTB |= _BV(PB1);
     }
     delay(2000);
-    PORTB &= ~(_BV(PB4) || _BV(PB1));
+    PORTB &= ~(_BV(PB0) || _BV(PB1));
     startLowBatteryWatchdog();
+  } else {
+    // flash short if all fine
+    PORTB |= _BV(PB0) || _BV(PB1);
+    delay(5);
+    PORTB &= ~(_BV(PB0) || _BV(PB1));
   }
 
   ADCSRA &= ~_BV(ADEN); // switch ADC off so it doesn't use current
@@ -96,7 +97,7 @@ void loop() {
 
   if (batteryLowWarningLit) {
     delay(1);
-    PORTB &= ~(_BV(PB4) || _BV(PB1));
+    PORTB &= ~(_BV(PB0) || _BV(PB1));
     batteryLowWarningLit = false;
   }
 
@@ -119,7 +120,7 @@ void loop() {
         break;
       }
     case S_Triggered:
-      PORTB |= _BV(PB0);
+      PORTB |= _BV(PB4);
       goToState(S_Playing);
       break;
     case S_Playing:
@@ -129,7 +130,7 @@ void loop() {
         if (ownBatteryLow || otherBatteryLow) {
           startLowBatteryWatchdog();
         }
-        PORTB &= ~_BV(PB0);
+        PORTB &= ~_BV(PB4);
         goToState(S_WaitingTrigger);
         sleep();
       }
