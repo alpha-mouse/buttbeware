@@ -77,13 +77,13 @@ void setup() {
       PORTB |= _BV(PB1);
     }
     delay(2000);
-    PORTB &= ~(_BV(PB0) || _BV(PB1));
+    PORTB &= ~(_BV(PB0) | _BV(PB1));
     startLowBatteryWatchdog();
   } else {
     // flash short if all fine
-    PORTB |= _BV(PB0) || _BV(PB1);
+    PORTB |= _BV(PB0) | _BV(PB1);
     delay(5);
-    PORTB &= ~(_BV(PB0) || _BV(PB1));
+    PORTB &= ~(_BV(PB0) | _BV(PB1));
   }
 
   ADCSRA &= ~_BV(ADEN); // switch ADC off so it doesn't use current
@@ -97,7 +97,7 @@ void loop() {
 
   if (batteryLowWarningLit) {
     delay(1);
-    PORTB &= ~(_BV(PB0) || _BV(PB1));
+    PORTB &= ~(_BV(PB0) | _BV(PB1));
     batteryLowWarningLit = false;
   }
 
