@@ -5,8 +5,6 @@
 #define TriggerDuration 300
 #define TriggerFrequency 480
 #define AlarmingOwnBatteryLevel 3600
-#define AlarmingOtherBatteryLevel 8700
-#define OtherBatteryVoltageDivision 3.3
 
 enum state_t {
   S_Initializing = 0,
@@ -168,10 +166,9 @@ void checkBatteries() {
   ADCSRA |= _BV(ADEN); // turn ADC on
 
   int ownVoltage = readOwnVcc();
-  int otherVoltage = readOtherVoltage(ownVoltage);
 
   ownBatteryLow = ownVoltage < AlarmingOwnBatteryLevel;
-  otherBatteryLow = otherVoltage < AlarmingOtherBatteryLevel;
+  otherBatteryLow = digitalRead(3) == LOW;
 
   ADCSRA &= ~_BV(ADEN); // switch ADC off again
 }
@@ -195,10 +192,5 @@ int readOwnVcc() {
   result = 1042000L / result; // Calculate Vcc (in mV); 1125300 = 1.017*1023*1000 (1.017 from adjusting oneself)
 
   return (int)result; // Vcc in millivolts
-}
-
-int readOtherVoltage(int reference) {
-  double voltage = analogRead(3);
-  return (int)(reference * voltage * OtherBatteryVoltageDivision / 1023);
 }
 
