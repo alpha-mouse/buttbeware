@@ -4,7 +4,7 @@
 
 #define TriggerDuration 300
 #define TriggerFrequency 480
-#define AlarmingOwnBatteryLevel 3600
+#define AlarmingOwnBatteryLevel 3800
 
 enum state_t {
   S_Initializing = 0,
@@ -61,10 +61,6 @@ void setup() {
 
   DDRB &= ~_BV(DDB2); // pin 7 input RC interrupt
 
-  // RC interrupt setup
-  GIMSK |= _BV(INT0); // enable interrupt
-  MCUCR &= ~(_BV(ISC01) | _BV(ISC00)); // low level, because otherwise attiny wont wake-up
-
   // check batteries on startup
   PORTB |= _BV(PB4); // turn on downstream just to check voltage
   delay(10);
@@ -90,6 +86,11 @@ void setup() {
 
   ADCSRA &= ~_BV(ADEN); // switch ADC off so it doesn't use current
   goToState(S_WaitingTrigger);
+  
+  // RC interrupt setup
+  MCUCR &= ~(_BV(ISC01) | _BV(ISC00)); // low level, because otherwise attiny wont wake-up
+  GIMSK |= _BV(INT0); // enable interrupt
+  
   sleep();
 
 }
@@ -112,7 +113,7 @@ void loop() {
       if (duration < TriggerDuration) {
         break;
       } else {
-        if (pulsesReceived < (long)TriggerFrequency * duration / 1000 / 2) {
+        if (pulsesReceived < (long)TriggerFrequency * duration / 1000 / 1.5) {
           // false positive
           goToState(S_WaitingTrigger);
           sleep();
@@ -168,7 +169,7 @@ void checkBatteries() {
   int ownVoltage = readOwnVcc();
 
   ownBatteryLow = ownVoltage < AlarmingOwnBatteryLevel;
-  otherBatteryLow = digitalRead(3) == LOW;
+  otherBatteryLow = analogRead(3) < 30; // totally magic
 
   ADCSRA &= ~_BV(ADEN); // switch ADC off again
 }
@@ -190,6 +191,8 @@ int readOwnVcc() {
   long result = (high << 8) | low;
 
   result = 1042000L / result; // Calculate Vcc (in mV); 1125300 = 1.017*1023*1000 (1.017 from adjusting oneself)
+  
+  ADMUX = 0; // because datasheet page 36 says something which I interprete as that internal voltage reference should better be sidabled
 
   return (int)result; // Vcc in millivolts
 }
