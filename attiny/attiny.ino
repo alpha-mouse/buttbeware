@@ -113,12 +113,13 @@ void loop() {
       if (duration < TriggerDuration) {
         break;
       } else {
-        if (pulsesReceived < (long)TriggerFrequency * duration / 1000 / 1.5) {
+        long expected = (long)TriggerFrequency * duration / 1000;
+        if (expected * 0.7 < pulsesReceived && pulsesReceived < expected * 1.4) {
+          goToState(S_Triggered);
+        } else {
           // false positive
           goToState(S_WaitingTrigger);
           sleep();
-        } else {
-          goToState(S_Triggered);
         }
         break;
       }
